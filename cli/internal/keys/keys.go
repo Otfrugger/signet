@@ -14,6 +14,8 @@ import (
 	"os/exec"
 	"regexp"
 	"strings"
+
+	"github.com/blockchain-maxis/signet/cli/internal/exitcode"
 )
 
 // DefaultBinary is the `stellar` CLI executable name looked up on PATH.
@@ -57,18 +59,18 @@ func ResolvePublicKey(binary, source string) (string, error) {
 	stdout, stderr, err := run(binary, "keys", "address", source)
 	if err != nil {
 		if _, lookErr := exec.LookPath(binary); lookErr != nil {
-			return "", fmt.Errorf("%s not found on PATH: install the Stellar CLI to resolve local identities", binary)
+			return "", fmt.Errorf("%w: %s not found on PATH: install the Stellar CLI to resolve local identities", exitcode.ErrConfiguration, binary)
 		}
 		msg := strings.TrimSpace(string(stderr))
 		if msg == "" {
 			msg = err.Error()
 		}
-		return "", fmt.Errorf("resolving identity %q: %s", source, msg)
+		return "", fmt.Errorf("%w: resolving identity %q: %s", exitcode.ErrNoIdentity, source, msg)
 	}
 
 	publicKey := strings.TrimSpace(string(stdout))
 	if !publicKeyPattern.MatchString(publicKey) {
-		return "", fmt.Errorf("identity %q resolved to something that isn't a Stellar public key", source)
+		return "", fmt.Errorf("%w: identity %q resolved to something that isn't a Stellar public key", exitcode.ErrNoIdentity, source)
 	}
 	return publicKey, nil
 }
