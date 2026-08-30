@@ -12,6 +12,19 @@ structured result, but it doesn't yet perform a real on-chain claim or call a
 deployment's HTTP API — that (along with local key management) lands in
 follow-up issues once `internal/keys`/`internal/spec` are implemented.
 
+## The `stellar` CLI dependency
+
+`internal/keys` delegates identity resolution and signing to the [Stellar
+CLI](https://developers.stellar.org/docs/tools/cli) (`stellar keys ...`,
+`stellar tx sign ...`) rather than owning key storage itself.
+`keys.CheckStellarCLI` verifies it's on `PATH` and reports at least
+`keys.MinimumStellarVersion` (currently `25.2.0` — where `tx sign` gained
+`--sign-with-key` and reading the transaction from stdin) before any command
+that needs it does real work. A missing binary and a too-old version each
+produce a distinct, actionable error naming
+`keys.StellarInstallURL` and the required version — never a raw exec error or
+an unrecognized-flag message pointing at the wrong tool.
+
 ## Commands
 
 ### `signet link <handle>`
@@ -126,5 +139,5 @@ GOOS=linux  GOARCH=amd64 go build -o bin/signet-linux-amd64  ./cmd/signet
 | `internal/cmd` | Cobra command tree |
 | `internal/config` | Resolves `--url`/`--source`/`SIGNET_URL`/the config file into the settings a run uses |
 | `internal/link` | `signet link` — validates a handle/public key and reports a structured result; the actual on-chain claim / API call is not yet implemented |
-| `internal/keys` | Resolves a named local identity to its public key by shelling out to the `stellar` CLI (`stellar keys address <name>`); signing itself is not yet implemented |
+| `internal/keys` | Resolves a named local identity to its public key, and checks the local `stellar` CLI is present and new enough, by shelling out to it; signing itself is not yet implemented |
 | `internal/spec` | Typed request/response models for a Signet deployment's HTTP API (scaffolded, not yet implemented) |
