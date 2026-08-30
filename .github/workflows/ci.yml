@@ -89,6 +89,28 @@ jobs:
           version: latest
           working-directory: cli
 
+      # Cross-compile smoke build — the CLI is consumed as a prebuilt binary
+      # from a release, not from this repo, so a build break for a platform
+      # nobody's local machine matches (e.g. linux/arm64 built from an amd64
+      # dev box) would otherwise stay invisible until it broke on a
+      # stranger's machine. No cgo (see go.mod), so each target only needs
+      # GOOS/GOARCH — no per-platform runner or toolchain.
+      - name: Cross-compile smoke build
+        run: |
+          set -euo pipefail
+          targets=(
+            "linux   amd64"
+            "linux   arm64"
+            "darwin  arm64"
+            "windows amd64"
+          )
+          for target in "${targets[@]}"; do
+            read -r goos goarch <<< "$target"
+            echo "::group::build ${goos}/${goarch}"
+            CGO_ENABLED=0 GOOS="$goos" GOARCH="$goarch" go build -o /dev/null ./cmd/signet
+            echo "::endgroup::"
+          done
+
   contracts:
     name: soroban contract tests
     runs-on: ubuntu-latest
