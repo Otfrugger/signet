@@ -78,8 +78,11 @@ jobs:
       - name: Vet
         run: go vet ./...
 
+      # -race needs cgo (a C toolchain), which ubuntu-latest ships with —
+      # unlike the CGO_ENABLED=0 production build (see cmd/signet's
+      # cross-compile requirement), the test binary is never distributed.
       - name: Test
-        run: go test ./...
+        run: go test -race ./...
 
       - uses: golangci/golangci-lint-action@v6
         with:

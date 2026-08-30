@@ -37,6 +37,18 @@ to parse as either the one JSON object or nothing at all.
 
 `--network` defaults to `testnet`; pass `--network mainnet` for mainnet.
 
+## Exit codes
+
+| Code | Meaning |
+|------|---------|
+| `0` | Success |
+| `1` | Generic/unexpected error |
+| `2` | Invalid input (e.g. a malformed handle or public key) |
+
+Any error not tagged with a specific code (see `internal/cmd.ExitCoder`) maps
+to `1`. Diagnosed from a CI log or a shell script's `$?` — there's no preview
+deploy or browser console for a CLI once it ships as a binary.
+
 ## Configuration
 
 Every command reads two settings — which Signet deployment to talk to, and
@@ -84,9 +96,19 @@ go build \
 
 ```bash
 go vet ./...
-go test ./...
+go test -race ./...
 golangci-lint run ./...
 ```
+
+`-race` needs a C toolchain (cgo) to build the instrumented test binary —
+unrelated to the production build's `CGO_ENABLED=0` requirement below, since
+the test binary is never distributed. If you don't have a C compiler
+installed, drop `-race` locally; CI (`ubuntu-latest`) always runs with it.
+
+`internal/keys`' tests compile a throwaway `stellar` CLI stand-in from
+`internal/keys/testdata/fakestellar` on first use (the standard Go
+"helper binary" pattern) so `ResolvePublicKey`'s `exec.Command` wiring is
+exercised for real, without needing the actual Stellar CLI installed.
 
 No cgo is used anywhere in this module, so it cross-compiles with the
 standard `GOOS`/`GOARCH` combinations, e.g.:
@@ -104,5 +126,5 @@ GOOS=linux  GOARCH=amd64 go build -o bin/signet-linux-amd64  ./cmd/signet
 | `internal/cmd` | Cobra command tree |
 | `internal/config` | Resolves `--url`/`--source`/`SIGNET_URL`/the config file into the settings a run uses |
 | `internal/link` | `signet link` — validates a handle/public key and reports a structured result; the actual on-chain claim / API call is not yet implemented |
-| `internal/keys` | Local signing key management (scaffolded, not yet implemented) |
+| `internal/keys` | Resolves a named local identity to its public key by shelling out to the `stellar` CLI (`stellar keys address <name>`); signing itself is not yet implemented |
 | `internal/spec` | Typed request/response models for a Signet deployment's HTTP API (scaffolded, not yet implemented) |
