@@ -59,7 +59,7 @@ id configured, the page says so rather than presenting the manifest as registry 
 ## Also implemented
 
 - **On-chain Identity Registry — deployed to testnet** — a real Soroban contract (`packages/contracts/identity-registry`) binds a wallet to a handle via a signed `claim`; ownership is enforced by `require_auth`. Live at `CASFJHI5PQSRWS7JV25CF7FOMRKIVBP3RXRP3E2GH2CV4BCAG7FUJRCN` since 2026-07-09 (see [Status](#status)). 24 unit tests, builds to wasm.
-- **Wallet connect + claim flow — live** — `Connect wallet` / `Claim your handle` use Stellar Wallets Kit and submit a real on-chain `claim` against the deployed registry (`apps/web/lib/{wallet,registry}.ts`) whenever `NEXT_PUBLIC_IDENTITY_REGISTRY_ID` is set. With no contract id configured, `claimHandle` throws `RegistryNotConfiguredError` and the UI shows an honest "Phase 2" message rather than a broken button.
+- **Wallet connect + claim flow — live** — `Connect wallet` / `Claim your handle` use Stellar Wallets Kit and submit a real on-chain `claim` against the deployed registry (`apps/web/lib/{wallet,registry}.ts`) whenever `NEXT_PUBLIC_IDENTITY_REGISTRY_ID` is set. With no contract id configured, `claimHandle` throws `RegistryNotConfiguredError` and the UI says this deployment is not configured against a registry, rather than showing a broken button.
 - **Public handle directory** — `/handles` rebuilds the currently-bound set from the registry's `claimed`/`released` event stream over Soroban RPC, with no database in the path (`apps/web/lib/directory.ts`).
 - **Real API + SDK** — tRPC `profile.byHandle` / `profile.list` / `health`; `@signet/sdk` fetches them. Both covered by tests.
 - **CI gates** lint · typecheck · test · build, plus a Rust contract job.
@@ -88,7 +88,7 @@ Visit `http://localhost:3000/p/aquawolf` for the first demo profile.
 > **Requires Node 22+.** Fonts (`IBM Plex Sans`/`Mono`) load via a browser-side `@import` in `globals.css` (not `next/font`), so the build never blocks on font downloads.
 
 First-run failures (stellar CLI passphrase bug, Friendbot funding, missing
-`wasm32v1-none`, no `DATABASE_URL`, Phase 2 claim message, indexer without a
+`wasm32v1-none`, no `DATABASE_URL`, the not-configured claim message, indexer without a
 registry id): see [`docs/TROUBLESHOOTING.md`](docs/TROUBLESHOOTING.md).
 
 ## Self-host / deploy

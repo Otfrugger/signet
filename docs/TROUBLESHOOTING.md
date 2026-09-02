@@ -17,7 +17,7 @@ If your failure is not listed, open an issue with the full command and stderr.
 | `pnpm install` / Next build fails on Node 18/20                     | Engines require Node 22+                            | Upgrade Node (`nvm use` / install 22); see `.nvmrc`                      |
 | `error: could not find native static library` / missing wasm target | `wasm32v1-none` not installed                       | `rustup target add wasm32v1-none`                                        |
 | Web app needs Postgres?                                             | No — demo routes are static                         | Run `pnpm --filter @signet/web dev` without `DATABASE_URL`               |
-| Claim button shows "Phase 2"                                        | `NEXT_PUBLIC_IDENTITY_REGISTRY_ID` unset            | Set the deployed testnet contract id in `.env`                           |
+| Claim button shows "not configured"                                 | `NEXT_PUBLIC_IDENTITY_REGISTRY_ID` unset            | Set the deployed testnet contract id in `.env`                           |
 | Indexer starts but never attests claims                             | Registry id unset                                   | Set `INDEXER_REGISTRY_CONTRACT_ID` or `NEXT_PUBLIC_IDENTITY_REGISTRY_ID` |
 
 ---
@@ -194,11 +194,11 @@ want the indexer or DB-backed reads. Leave it unset for pure UI work.
 
 ---
 
-## 6. Claim button shows the Phase 2 message
+## 6. Claim button shows "not configured" message
 
 **Symptom**
 
-"Connect wallet" / "Claim your handle" surfaces an honest **Phase 2** message
+"Connect wallet" / "Claim your handle" surfaces a message stating that the deployment is not configured against an Identity Registry contract
 instead of submitting an on-chain claim.
 
 **Cause**
@@ -218,9 +218,9 @@ the UI refuses to pretend the registry is live.
 3. Restart the web dev server (`NEXT_PUBLIC_*` is inlined at boot).
 
 If you deploy your own registry, put that contract id in the same variable
-instead. Until it is set, the Phase 2 message is intentional, not a bug.
+instead. Until it is set, the not-configured message is intentional, not a bug.
 
-**Verified:** unset → Phase 2 copy; set to the testnet id → claim path attempts
+**Verified:** unset → the not-configured copy; set to the testnet id → claim path attempts
 a real registry call via Soroban RPC.
 
 ---
