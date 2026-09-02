@@ -118,6 +118,39 @@ GOOS=darwin GOARCH=arm64 go build -o bin/signet-darwin-arm64 ./cmd/signet
 GOOS=linux  GOARCH=amd64 go build -o bin/signet-linux-amd64  ./cmd/signet
 ```
 
+## Release
+
+`npx` executes JavaScript from the npm registry and cannot run a Go binary
+directly, so `npx @signet/cli link ...` works via a small wrapper package
+(`npm/cli`) that execs the one prebuilt platform binary npm resolved as an
+`optionalDependency` — the same pattern esbuild, swc, and turbo use:
+
+```
+npm/cli                    zero-dependency JS shim that execs the binary
+  optionalDependencies:
+    npm/cli-linux-x64       one prebuilt Go binary each, published from
+    npm/cli-linux-arm64     the matching cli/npm/cli-<platform> package
+    npm/cli-darwin-arm64
+    npm/cli-windows-x64
+```
+
+Pushing a `cli-v*.*.*` tag (e.g. `cli-v0.1.0`) runs
+[`.github/workflows/release-cli.yml`](../.github/workflows/release-cli.yml):
+cross-compiles all four targets (Go cross-compiles cleanly from one runner —
+no build matrix needed), checksums them, stages each binary into its npm
+package via `scripts/release/stage-platform-package.mjs`, pins the shim's own
+version and every `optionalDependency` to match via
+`scripts/release/pin-shim-version.mjs` (so it never resolves a floating range
+that could drift from what was actually tested), and creates a GitHub Release
+with the binaries and checksums attached. That much runs on every tag push.
+
+Actually publishing to npm is opt-in, mirroring `deploy.yml`: it runs only
+when the `CLI_RELEASE_ENABLED` repository variable is `"true"` and an
+`NPM_TOKEN` secret (npm automation token with publish access to `@signet`)
+is configured in the `production` environment. Until then, tagging a release
+still produces verified, checksummed binaries on the GitHub Release — nothing
+publishes to npm without both being set deliberately.
+
 ## Layout
 
 | Path | Purpose |
@@ -128,3 +161,6 @@ GOOS=linux  GOARCH=amd64 go build -o bin/signet-linux-amd64  ./cmd/signet
 | `internal/link` | `signet link` — validates a handle/public key and reports a structured result; the actual on-chain claim / API call is not yet implemented |
 | `internal/keys` | Resolves a named local identity to its public key by shelling out to the `stellar` CLI (`stellar keys address <name>`); signing itself is not yet implemented |
 | `internal/spec` | Typed request/response models for a Signet deployment's HTTP API (scaffolded, not yet implemented) |
+| `internal/exitcode` | Process exit code constants, shared by `internal/cmd` and error types like `internal/link.ValidationError` |
+| `npm/cli` | The `@signet/cli` npm shim published for `npx` |
+| `npm/cli-<platform>` | One `optionalDependency` package per release target, each carrying just the prebuilt binary |

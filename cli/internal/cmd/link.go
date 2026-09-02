@@ -38,9 +38,7 @@ func newLinkCmd() *cobra.Command {
 			// Deliberately not "Linked …": internal/keys and internal/spec
 			// are still scaffolds, so nothing has been claimed on-chain or
 			// sent to a deployment yet. Saying otherwise would report a
-			// success that did not happen. The --json contract above is
-			// unaffected — `status` stays the machine-readable field, and
-			// this text is the human-facing half that must not overstate it.
+			// success that did not happen.
 			_, err = fmt.Fprintf(
 				cmd.OutOrStdout(),
 				"Validated %s for %s (%s). Not yet submitted — the on-chain claim is not implemented.\n",
