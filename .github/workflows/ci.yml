@@ -99,8 +99,11 @@ jobs:
       - name: Vet
         run: go vet ./...
 
+      # -race needs cgo (a C toolchain), which ubuntu-latest ships with —
+      # unlike the CGO_ENABLED=0 production build (see cmd/signet's
+      # cross-compile requirement), the test binary is never distributed.
       - name: Test
-        run: go test ./...
+        run: go test -race ./...
 
       # Three things have to agree here, and the original v6 + `version: latest`
       # got two of them wrong:
@@ -117,6 +120,29 @@ jobs:
         with:
           version: v2.13.2
           working-directory: cli
+
+      # Cross-compile smoke build — the CLI is consumed as a prebuilt binary
+      # from a release, not from this repo, so a build break for a platform
+      # nobody's local machine matches (e.g. linux/arm64 built from an amd64
+      # dev box) would otherwise stay invisible until it broke on a
+      # stranger's machine. No cgo (see go.mod), so each target only needs
+      # GOOS/GOARCH — no per-platform runner or toolchain. The four targets
+      # are the same set release-cli.yml publishes.
+      - name: Cross-compile smoke build
+        run: |
+          set -euo pipefail
+          targets=(
+            "linux   amd64"
+            "linux   arm64"
+            "darwin  arm64"
+            "windows amd64"
+          )
+          for target in "${targets[@]}"; do
+            read -r goos goarch <<< "$target"
+            echo "::group::build ${goos}/${goarch}"
+            CGO_ENABLED=0 GOOS="$goos" GOARCH="$goarch" go build -o /dev/null ./cmd/signet
+            echo "::endgroup::"
+          done
 
   contracts:
     name: soroban contract tests
