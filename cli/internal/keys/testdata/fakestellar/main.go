@@ -1,7 +1,9 @@
 // Command fakestellar is a stand-in for the real `stellar` CLI, used only by
-// keys_test.go. It understands exactly the invocation ResolvePublicKey
-// makes — `stellar keys address <name>` — and its behavior is chosen by the
-// requested name, so the test doesn't need extra environment plumbing.
+// keys_test.go. It understands the invocations ResolvePublicKey and
+// CheckStellarCLI make — `stellar keys address <name>` and
+// `stellar --version` — and its behavior is chosen by the requested name (or
+// the FAKESTELLAR_VERSION env var, for --version), so tests don't need to
+// build multiple binaries.
 package main
 
 import (
@@ -11,6 +13,16 @@ import (
 
 func main() {
 	args := os.Args[1:]
+
+	if len(args) == 1 && args[0] == "--version" {
+		version := os.Getenv("FAKESTELLAR_VERSION")
+		if version == "" {
+			version = "25.2.0"
+		}
+		fmt.Printf("stellar %s\n", version)
+		return
+	}
+
 	if len(args) != 3 || args[0] != "keys" || args[1] != "address" {
 		fmt.Fprintln(os.Stderr, "fakestellar: unsupported invocation")
 		os.Exit(2)

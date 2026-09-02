@@ -2,6 +2,7 @@ package keys
 
 import (
 	"fmt"
+	"os"
 	"os/exec"
 	"path/filepath"
 	"runtime"
@@ -9,16 +10,32 @@ import (
 	"testing"
 )
 
-// buildFakeStellar compiles testdata/fakestellar once per test run (guarded
-// by sync.Once so parallel/subsequent tests reuse the same binary) and
-// returns its path — a real, faked `stellar` binary that ResolvePublicKey
-// shells out to exactly as it would the genuine CLI, per #290's "identity
-// resolution against a faked stellar binary" requirement.
+// buildFakeStellar compiles testdata/fakestellar once per test binary run
+// (guarded by sync.Once) and returns its path — a real, faked `stellar`
+// binary that ResolvePublicKey/CheckStellarCLI shell out to exactly as they
+// would the genuine CLI, per #290's "identity resolution against a faked
+// stellar binary" requirement.
+//
+// The build directory is a plain os.MkdirTemp, not t.TempDir(): t.TempDir()
+// is removed as soon as the *specific test* that created it finishes, but
+// this path is cached and reused across every other test in the package —
+// using it here would delete the binary out from under every test after the
+// first. TestMain below cleans the directory up once, at the end of the
+// whole run.
 var (
 	fakeStellarOnce sync.Once
+	fakeStellarDir  string
 	fakeStellarPath string
 	fakeStellarErr  error
 )
+
+func TestMain(m *testing.M) {
+	code := m.Run()
+	if fakeStellarDir != "" {
+		_ = os.RemoveAll(fakeStellarDir)
+	}
+	os.Exit(code)
+}
 
 func buildFakeStellar(t *testing.T) string {
 	t.Helper()
@@ -28,7 +45,12 @@ func buildFakeStellar(t *testing.T) string {
 			fakeStellarErr = err
 			return
 		}
-		dir := t.TempDir()
+		dir, err := os.MkdirTemp("", "fakestellar")
+		if err != nil {
+			fakeStellarErr = err
+			return
+		}
+		fakeStellarDir = dir
 		out := filepath.Join(dir, "stellar")
 		if runtime.GOOS == "windows" {
 			out += ".exe"
