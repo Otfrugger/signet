@@ -52,8 +52,21 @@ func TestNoSecretShapedValueEverReachesOutput(t *testing.T) {
 		root.SetErr(stderr)
 		root.SetArgs(args)
 
-		_ = root.Execute() // error or not: only the output shape is under test here
+		err := root.Execute()
 
 		assertNoSecretShapedOutput(t, "args="+args[0], stdout, stderr)
+
+		// The command tree runs with SilenceErrors, so a returned error never
+		// reaches the buffers above — cmd/signet/main.go is what prints it, to
+		// the process's real stderr. Checking only the buffers would therefore
+		// pass even if the message echoed the value straight back, so the
+		// error string is asserted separately. This is the case that matters:
+		// a user who puts a secret seed in --public-key by mistake must not
+		// have it read back to them (and into their shell history and CI log).
+		if err != nil {
+			if m := secretPattern.FindString(err.Error()); m != "" {
+				t.Fatalf("args=%v: a secret-shaped value reached the error string: %q", args, m)
+			}
+		}
 	}
 }

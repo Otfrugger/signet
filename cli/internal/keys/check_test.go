@@ -120,3 +120,44 @@ func containsAll(s string, substrs ...string) bool {
 	}
 	return true
 }
+
+// The checks above prove CheckStellarCLI itself works. These prove it is
+// actually reached: issue #297 asks for the version check to happen *before
+// any work*, and a guard nothing calls satisfies none of that. ResolvePublicKey
+// is the function that shells out to `stellar`, so the guard runs there and
+// every caller inherits it.
+
+func TestResolvePublicKeyRefusesATooOldStellar(t *testing.T) {
+	bin := buildFakeStellar(t)
+	t.Setenv("FAKESTELLAR_VERSION", "24.0.0")
+
+	// "alice" is an identity the fake resolves happily — so if this succeeds,
+	// the version guard was skipped rather than the identity being at fault.
+	_, err := ResolvePublicKey(bin, "alice")
+	if err == nil {
+		t.Fatal("ResolvePublicKey succeeded against a too-old stellar CLI; the version guard did not run")
+	}
+	if !errors.Is(err, ErrStellarTooOld) {
+		t.Fatalf("ResolvePublicKey error = %v, want one wrapping ErrStellarTooOld", err)
+	}
+}
+
+func TestResolvePublicKeyReportsAMissingStellarDistinctly(t *testing.T) {
+	_, err := ResolvePublicKey(filepath.Join(t.TempDir(), "definitely-not-installed"), "alice")
+	if !errors.Is(err, ErrStellarNotFound) {
+		t.Fatalf("ResolvePublicKey error = %v, want one wrapping ErrStellarNotFound", err)
+	}
+}
+
+func TestResolvePublicKeyStillWorksOnASupportedStellar(t *testing.T) {
+	bin := buildFakeStellar(t)
+	t.Setenv("FAKESTELLAR_VERSION", MinimumStellarVersion)
+
+	got, err := ResolvePublicKey(bin, "alice")
+	if err != nil {
+		t.Fatalf("ResolvePublicKey: %v", err)
+	}
+	if want := "GASAAEJC6P5UZGRLYJ2I2KYLR7RXGF44JZXDYGCFBN7T5VIHECUUEMCD"; got != want {
+		t.Fatalf("ResolvePublicKey = %q, want %q", got, want)
+	}
+}
