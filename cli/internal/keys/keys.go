@@ -56,11 +56,18 @@ func ResolvePublicKey(binary, source string) (string, error) {
 		return "", fmt.Errorf("identity name is required")
 	}
 
+	// Check the dependency before using it. Without this, a missing or too-old
+	// `stellar` surfaces as a raw exec error or an unrecognized-flag message
+	// that points at the wrong tool entirely — which is the whole point of
+	// issue #297. Doing it here rather than in each command means every path
+	// that shells out to `stellar` is covered by construction, including the
+	// identity resolution still to land.
+	if err := CheckStellarCLI(binary); err != nil {
+		return "", err
+	}
+
 	stdout, stderr, err := run(binary, "keys", "address", source)
 	if err != nil {
-		if _, lookErr := exec.LookPath(binary); lookErr != nil {
-			return "", fmt.Errorf("%w: %s not found on PATH: install the Stellar CLI to resolve local identities", exitcode.ErrConfiguration, binary)
-		}
 		msg := strings.TrimSpace(string(stderr))
 		if msg == "" {
 			msg = err.Error()
