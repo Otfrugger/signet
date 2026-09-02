@@ -52,15 +52,35 @@ to parse as either the one JSON object or nothing at all.
 
 ## Exit codes
 
+Stable and documented — scripts and CI wrapping this command can branch on
+the code instead of scraping message text, which is free to change between
+releases.
+
 | Code | Meaning |
 |------|---------|
 | `0` | Success |
 | `1` | Generic/unexpected error |
 | `2` | Invalid input (e.g. a malformed handle or public key) |
+| `3` | Configuration error — the config file, a flag/env var, or the local `stellar` CLI (missing, or older than the required minimum version) is unusable |
+| `4` | No identity — `stellar` couldn't resolve the requested identity |
+| `5` | Signing failed |
+| `6` | Network error — a Signet deployment couldn't be reached, or returned an unexpected response |
+| `7` | Timed out |
+| `8` | Approval rejected — the developer (or the deployment, on their behalf) explicitly declined |
+| `9` | Already linked — the target wallet already has a conflicting binding |
 
-Any error not tagged with a specific code (see `internal/cmd.ExitCoder`) maps
-to `1`. Diagnosed from a CI log or a shell script's `$?` — there's no preview
-deploy or browser console for a CLI once it ships as a binary.
+Codes `5`–`9` are defined now (`internal/exitcode`) so the commands that will
+raise them (signing, talking to a deployment, an interactive approval flow)
+have a stable code to wrap into from day one, even though nothing in this
+module raises them yet. `0`–`4` all have a real caller today.
+
+Every code beyond `2` is a sentinel error in `internal/exitcode`
+(`ErrConfiguration`, `ErrNoIdentity`, etc.), wrapped with `fmt.Errorf`'s `%w`
+wherever it actually happens and matched with `errors.Is` — see
+`internal/cmd.ExitCode`. `2` is the one exception, implemented via
+`link.ValidationError`'s own `ExitCoder` interface rather than a shared
+sentinel, since malformed input is caught before any of the other failure
+classes could apply. An error that matches neither mechanism maps to `1`.
 
 ## Configuration
 
@@ -141,3 +161,4 @@ GOOS=linux  GOARCH=amd64 go build -o bin/signet-linux-amd64  ./cmd/signet
 | `internal/link` | `signet link` — validates a handle/public key and reports a structured result; the actual on-chain claim / API call is not yet implemented |
 | `internal/keys` | Resolves a named local identity to its public key, and checks the local `stellar` CLI is present and new enough, by shelling out to it; signing itself is not yet implemented |
 | `internal/spec` | Typed request/response models for a Signet deployment's HTTP API (scaffolded, not yet implemented) |
+| `internal/exitcode` | The exit-code taxonomy (see "Exit codes" above) — its own leaf package so both `internal/cmd` and packages like `internal/keys` can depend on it without a cycle |

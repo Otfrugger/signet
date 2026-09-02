@@ -7,6 +7,8 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+
+	"github.com/blockchain-maxis/signet/cli/internal/exitcode"
 )
 
 // MinimumStellarVersion is the oldest `stellar` CLI version this tool relies
@@ -81,8 +83,8 @@ func CheckStellarCLI(binary string) error {
 
 	if _, err := exec.LookPath(binary); err != nil {
 		return fmt.Errorf(
-			"%w: %q — install it from %s (%s or newer is required)",
-			ErrStellarNotFound, binary, StellarInstallURL, MinimumStellarVersion,
+			"%w: %w: %q — install it from %s (%s or newer is required)",
+			exitcode.ErrConfiguration, ErrStellarNotFound, binary, StellarInstallURL, MinimumStellarVersion,
 		)
 	}
 
@@ -92,7 +94,7 @@ func CheckStellarCLI(binary string) error {
 		if msg == "" {
 			msg = err.Error()
 		}
-		return fmt.Errorf("could not determine %s's version: %s", binary, msg)
+		return fmt.Errorf("%w: could not determine %s's version: %s", exitcode.ErrConfiguration, binary, msg)
 	}
 
 	minimum, ok := parseSemver(MinimumStellarVersion)
@@ -109,8 +111,8 @@ func CheckStellarCLI(binary string) error {
 
 	if found.compare(minimum) < 0 {
 		return fmt.Errorf(
-			"%w: %s %s, need %s or newer — upgrade from %s",
-			ErrStellarTooOld, binary, found, MinimumStellarVersion, StellarInstallURL,
+			"%w: %w: %s %s, need %s or newer — upgrade from %s",
+			exitcode.ErrConfiguration, ErrStellarTooOld, binary, found, MinimumStellarVersion, StellarInstallURL,
 		)
 	}
 	return nil

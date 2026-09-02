@@ -10,6 +10,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/blockchain-maxis/signet/cli/internal/config"
+	"github.com/blockchain-maxis/signet/cli/internal/exitcode"
 )
 
 func newRootCmd(version, commit string) *cobra.Command {
@@ -39,7 +40,7 @@ instance) over its HTTP API.`,
 	root.PersistentPreRunE = func(cmd *cobra.Command, _ []string) error {
 		file, err := config.Load()
 		if err != nil {
-			return fmt.Errorf("reading config file: %w", err)
+			return fmt.Errorf("%w: reading config file: %w", exitcode.ErrConfiguration, err)
 		}
 
 		flagURL, _ := cmd.Flags().GetString("url")
@@ -56,7 +57,7 @@ instance) over its HTTP API.`,
 
 		if opts.FlagSourceSet {
 			if err := config.RememberSource(resolved.Source); err != nil {
-				return fmt.Errorf("saving identity to config file: %w", err)
+				return fmt.Errorf("%w: saving identity to config file: %w", exitcode.ErrConfiguration, err)
 			}
 		}
 		return nil

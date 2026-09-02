@@ -5,6 +5,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/blockchain-maxis/signet/cli/internal/exitcode"
 )
 
 func TestParseSemver(t *testing.T) {
@@ -159,5 +161,17 @@ func TestResolvePublicKeyStillWorksOnASupportedStellar(t *testing.T) {
 	}
 	if want := "GASAAEJC6P5UZGRLYJ2I2KYLR7RXGF44JZXDYGCFBN7T5VIHECUUEMCD"; got != want {
 		t.Fatalf("ResolvePublicKey = %q, want %q", got, want)
+	}
+}
+
+func TestCheckStellarCLIBothFailureModesCarryTheConfigurationCode(t *testing.T) {
+	bin := buildFakeStellar(t)
+	t.Setenv("FAKESTELLAR_VERSION", "24.0.0")
+
+	if err := CheckStellarCLI(bin); !errors.Is(err, exitcode.ErrConfiguration) {
+		t.Fatalf("too-old error does not wrap exitcode.ErrConfiguration: %v", err)
+	}
+	if err := CheckStellarCLI(filepath.Join(t.TempDir(), "nope")); !errors.Is(err, exitcode.ErrConfiguration) {
+		t.Fatalf("missing-binary error does not wrap exitcode.ErrConfiguration: %v", err)
 	}
 }

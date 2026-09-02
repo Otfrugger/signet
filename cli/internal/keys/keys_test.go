@@ -1,6 +1,7 @@
 package keys
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -8,6 +9,8 @@ import (
 	"runtime"
 	"sync"
 	"testing"
+
+	"github.com/blockchain-maxis/signet/cli/internal/exitcode"
 )
 
 // buildFakeStellar compiles testdata/fakestellar once per test binary run
@@ -109,5 +112,21 @@ func TestResolvePublicKeyReportsAMissingBinaryClearly(t *testing.T) {
 func TestResolvePublicKeyRequiresANonEmptySource(t *testing.T) {
 	if _, err := ResolvePublicKey(DefaultBinary, ""); err == nil {
 		t.Fatal("ResolvePublicKey succeeded with an empty identity name")
+	}
+}
+
+func TestResolvePublicKeyUnknownIdentityCarriesTheNoIdentityCode(t *testing.T) {
+	bin := buildFakeStellar(t)
+
+	_, err := ResolvePublicKey(bin, "missing")
+	if !errors.Is(err, exitcode.ErrNoIdentity) {
+		t.Fatalf("error does not wrap exitcode.ErrNoIdentity: %v", err)
+	}
+}
+
+func TestResolvePublicKeyMissingBinaryCarriesTheConfigurationCode(t *testing.T) {
+	_, err := ResolvePublicKey(filepath.Join(t.TempDir(), "does-not-exist"), "alice")
+	if !errors.Is(err, exitcode.ErrConfiguration) {
+		t.Fatalf("error does not wrap exitcode.ErrConfiguration: %v", err)
 	}
 }
