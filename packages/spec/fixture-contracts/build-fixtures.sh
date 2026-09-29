@@ -30,7 +30,7 @@ command -v stellar >/dev/null || { echo "error: stellar CLI not on PATH" >&2; ex
 command -v wat2wasm >/dev/null || { echo "error: wat2wasm (wabt) not on PATH" >&2; exit 1; }
 command -v node >/dev/null || { echo "error: node not on PATH" >&2; exit 1; }
 
-stellar contract build --locked --optimize=false
+stellar contract build --locked
 wat2wasm "$HERE/no_spec.wat" -o "$OUT/no_spec.wasm"
 node "$HERE/scripts/make-corrupt-section.mjs" \
   "$FIXTURES/identity-registry.wasm" "$OUT/corrupt_section.wasm"
