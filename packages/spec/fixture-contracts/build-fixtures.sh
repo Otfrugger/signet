@@ -30,6 +30,11 @@ command -v stellar >/dev/null || { echo "error: stellar CLI not on PATH" >&2; ex
 command -v wat2wasm >/dev/null || { echo "error: wat2wasm (wabt) not on PATH" >&2; exit 1; }
 command -v node >/dev/null || { echo "error: node not on PATH" >&2; exit 1; }
 
+# `stellar contract build` resolves its workspace from the process's working
+# directory (it has no --manifest-path for a workspace build), not from where
+# this script lives. Called from the repo root — which is how the CI step
+# invokes it — it would otherwise fail with "could not find Cargo.toml".
+cd "$HERE"
 stellar contract build --locked
 wat2wasm "$HERE/no_spec.wat" -o "$OUT/no_spec.wasm"
 node "$HERE/scripts/make-corrupt-section.mjs" \
