@@ -211,6 +211,49 @@ jobs:
             exit 1
           fi
 
+  spec-fixtures:
+    name: spec fixtures parity
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+
+      # No toolchain input on purpose: packages/spec/fixture-contracts
+      # pins its exact toolchain (rust-toolchain.toml), so CI builds with
+      # the same compiler the fixtures were committed from.
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32v1-none
+
+      - name: Cache cargo
+        uses: actions/cache@v6
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            packages/spec/fixture-contracts/target
+          key: cargo-fixtures-${{ hashFiles('packages/spec/fixture-contracts/Cargo.lock') }}
+
+      # soroban-sdk 28 refuses a plain `cargo build` for a contract and
+      # requires `stellar contract build` with stellar-cli >= 25.2.0 —
+      # same requirement as the contracts job above.
+      - name: Install stellar-cli
+        env:
+          STELLAR_CLI_VERSION: 25.2.0
+        run: |
+          curl -sSfL "https://github.com/stellar/stellar-cli/releases/download/v${STELLAR_CLI_VERSION}/stellar-cli-${STELLAR_CLI_VERSION}-x86_64-unknown-linux-gnu.tar.gz" \
+            | tar -xz -C "$RUNNER_TEMP" stellar
+          echo "$RUNNER_TEMP" >> "$GITHUB_PATH"
+
+      - name: Install wabt (wat2wasm for no_spec.wat)
+        run: sudo apt-get update && sudo apt-get install -y wabt
+
+      # Rebuilds the four Rust fixtures, recompiles no_spec.wat and
+      # regenerates corrupt_section.wasm, then fails on any byte difference
+      # against the committed packages/spec/fixtures/*.wasm.
+      - name: Verify fixtures match a fresh build
+        run: bash packages/spec/fixture-contracts/build-fixtures.sh --check
+
   e2e:
     name: e2e smoke tests
     runs-on: ubuntu-latest

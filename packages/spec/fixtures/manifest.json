@@ -6,5 +6,59 @@
     "wasmHash": "936996c74b7d383c56ec174857b15927cdd29478c6909da332b4dec8b67335fe",
     "bytes": 6240,
     "fetchedAt": "2026-09-27T11:42:01.669Z"
+  },
+  "types_zoo": {
+    "file": "types_zoo.wasm",
+    "sourceContract": "local-build:fixture-contracts/types_zoo",
+    "network": "local",
+    "wasmHash": "85a5bed439d3dd0870abe6403142502bae0ddfb014561f6ab7b751fa0a8418bc",
+    "bytes": 5271,
+    "fetchedAt": "2026-09-29T00:00:00Z",
+    "covers": "every ScSpecTypeDef arm: ints u32-i256, bool, symbol/string/bytes/bytes_n, address, timepoint/duration, option/result/vec/map/tuple, 3-deep struct, unit enum, tuple union, error enum, void"
+  },
+  "undocumented": {
+    "file": "undocumented.wasm",
+    "sourceContract": "local-build:fixture-contracts/undocumented",
+    "network": "local",
+    "wasmHash": "527cf1580a2f98e137d479c8882d2ccd9c17788957f2070955203103a8cfb3d8",
+    "bytes": 784,
+    "fetchedAt": "2026-09-29T00:00:00Z",
+    "covers": "functions with no doc comments"
+  },
+  "events": {
+    "file": "events.wasm",
+    "sourceContract": "local-build:fixture-contracts/events",
+    "network": "local",
+    "wasmHash": "54d386945ca53a43986c6e2c5dd49f82623d021d2100096cb3091767d36fc3cc",
+    "bytes": 1816,
+    "fetchedAt": "2026-09-29T00:00:00Z",
+    "covers": "contractevent types (topics + data)"
+  },
+  "errors_multi": {
+    "file": "errors_multi.wasm",
+    "sourceContract": "local-build:fixture-contracts/errors_multi",
+    "network": "local",
+    "wasmHash": "966eb629ba95a1bfa0cd1914355cdae7d6d5bda18a2268414f4c77e0e45c126f",
+    "bytes": 953,
+    "fetchedAt": "2026-09-29T00:00:00Z",
+    "covers": "two contracterror enums"
+  },
+  "no_spec": {
+    "file": "no_spec.wasm",
+    "sourceContract": "local-build:fixture-contracts/no_spec",
+    "network": "local",
+    "wasmHash": "93a44bbb96c751218e4c00d479e4c14358122a389acca16205b1e4d0dc5f9476",
+    "bytes": 8,
+    "fetchedAt": "2026-09-29T00:00:00Z",
+    "covers": "module with no contractspecv0 section (hand-written WAT)"
+  },
+  "corrupt_section": {
+    "file": "corrupt_section.wasm",
+    "sourceContract": "local-build:fixture-contracts/corrupt_section",
+    "network": "local",
+    "wasmHash": "68422baa0f570557d3343048c5583678cbf6a01fbfcdc9d83f4dd0a9a605a1bf",
+    "bytes": 5612,
+    "fetchedAt": "2026-09-29T00:00:00Z",
+    "covers": "contractspecv0 truncated mid-entry"
   }
 }
